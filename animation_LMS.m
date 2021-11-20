@@ -52,19 +52,22 @@ R_k = diag([1e-3 1e-3]);
 
 for ii = 1:N
     [fL,fR,fC]=check_sensors2(RC_Sens(1,:),RC_Sens(2,:));
-    if fL == 1 && fR == 0 && fC == 0
-        delR = dd*2;
-        delL = -dd;
-    elseif fL == 0 && fR == 1 && fC == 0
-        delR = -dd;
-        delL = dd*2;
-    elseif fL == 1 && fR == 1 && fC == 0
-        delR = dd*4;
-        delL = -dd*4;
-    else
-        delR = dd*4;
-        delL = dd*4;
-    end
+    
+    [delR,delL] = controller(fL,fR,fC);
+    
+%     if fL == 1 && fR == 0 && fC == 0
+%         delR = dd*2;
+%         delL = -dd;
+%     elseif fL == 0 && fR == 1 && fC == 0
+%         delR = -dd;
+%         delL = dd*2;
+%     elseif fL == 1 && fR == 1 && fC == 0
+%         delR = dd*4;
+%         delL = -dd*4;
+%     else
+%         delR = dd*4;
+%         delL = dd*4;
+%     end
     
     vee = rw*(delR+delL)/2 +randn*dev_v; % noise added
     omega = rw*(delR-delL)/2/b +randn*dev_w; % noise added
