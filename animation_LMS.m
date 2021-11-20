@@ -128,5 +128,6 @@ for ii = 1:N
     
     axis([-1 1 -1 1]*bb);hold on
     plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
+    plot(KF_trajectory(1,1:ii),KF_trajectory(2,1:ii),'r-','linewidth',2)
     axis square; drawnow;
 end
