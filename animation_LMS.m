@@ -55,22 +55,11 @@ for ii = 1:N
     
     [delR,delL] = controller(fL,fR,fC);
     
-%     if fL == 1 && fR == 0 && fC == 0
-%         delR = dd*2;
-%         delL = -dd;
-%     elseif fL == 0 && fR == 1 && fC == 0
-%         delR = -dd;
-%         delL = dd*2;
-%     elseif fL == 1 && fR == 1 && fC == 0
-%         delR = dd*4;
-%         delL = -dd*4;
-%     else
-%         delR = dd*4;
-%         delL = dd*4;
-%     end
+    %calculate input's Covariance matrix: 
+    Q_input = diag([kR*abs(delR) kL*abs(delL)]);
     
-    vee = rw*(delR+delL)/2 +randn*dev_v; % noise added
-    omega = rw*(delR-delL)/2/b +randn*dev_w; % noise added
+    vee = rw*(delR+delL)/2 +randn*sqrt(Q_input(1,1)); % noise added
+    omega = rw*(delR-delL)/2/b +randn*sqrt(Q_input(2,2)); % noise added
     
     delta_phi = T*omega;
     delta_x = 2*vee/omega*sin(delta_phi/2)*cos(phi+delta_phi/2);

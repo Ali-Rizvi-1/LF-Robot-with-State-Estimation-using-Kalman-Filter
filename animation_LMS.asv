@@ -52,22 +52,14 @@ R_k = diag([1e-3 1e-3]);
 
 for ii = 1:N
     [fL,fR,fC]=check_sensors2(RC_Sens(1,:),RC_Sens(2,:));
-    if fL == 1 && fR == 0 && fC == 0
-        delR = dd*2;
-        delL = -dd;
-    elseif fL == 0 && fR == 1 && fC == 0
-        delR = -dd;
-        delL = dd*2;
-    elseif fL == 1 && fR == 1 && fC == 0
-        delR = dd*4;
-        delL = -dd*4;
-    else
-        delR = dd*4;
-        delL = dd*4;
-    end
     
-    vee = rw*(delR+delL)/2 +randn*dev_v; % noise added
-    omega = rw*(delR-delL)/2/b +randn*dev_w; % noise added
+    [delR,delL] = controller(fL,fR,fC);
+    
+    %calculate input's Covariance matrix: 
+    Q_input = diag([kR*abs(delR) kL*abs(delL)]);
+    
+    vee = rw*(delR+delL)/2 +randn*sqrt(Q_input(1,1)); % noise added
+    omega = rw*(delR-delL)/2/b +randn*sqrt(Q_input(1,)); % noise added
     
     delta_phi = T*omega;
     delta_x = 2*vee/omega*sin(delta_phi/2)*cos(phi+delta_phi/2);
@@ -91,15 +83,16 @@ for ii = 1:N
 %     phi = xhat_last(3); 
     F_k = [1 0 -T*vee*sin(phi+T*omega/2); 0 1 T*vee*cos(phi+T*omega/2); 0 0 1];
     
-    x = xhat_last(1); 
-y = xhat_last(2); 
-rho = sqrt(x^2+y^2); 
+    % H jacobian
+    x = x_pos; 
+    y = y_pos; 
+    rho = sqrt(x^2+y^2); 
 
-H_k = [x/rho y/rho 0; -y/rho^2 x/rho^2 0];
+    H_k = [x/rho y/rho 0; -y/rho^2 x/rho^2 0];
     
     %KF:
     %[xhat_k, P_k] = KalmanFilter(y_k, xhat_last, P_last, F, Qk, H, Rk)
-    [xhat_optimal,P_optimal] = KalmanFilter(y_k, Q_k, R_k, xhat_last, p_last, vee, omega, T);
+    [xhat_optimal,P_optimal] = KalmanFilter(y_k, xhat_last, p_last, F_k, Q_k, H_k, R_k); %y_k, Q_k, R_k, xhat_last, p_last, vee, omega, T
     xhat_last = xhat_optimal; 
     p_last = P_optimal;
     
@@ -136,27 +129,4 @@ H_k = [x/rho y/rho 0; -y/rho^2 x/rho^2 0];
     axis([-1 1 -1 1]*bb);hold on
     plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
     axis square; drawnow;
-end
-
-function [fL,fR,fC]=check_sensors2(sen_x,sen_y)
-global r q s ellipse_a ellipse_b
-fL=0;fR=0;fC=0;
-ai = ellipse_a*(r-s*q);
-bi = ellipse_b*(r-s*q);
-ao = ellipse_a*(r+s*q);
-bo = ellipse_b*(r+s*q);
-x=sen_x(1);
-y=sen_y(1);
-if x^2/ai^2+y^2/bi^2>1 && x^2/ao^2+y^2/bo^2<1
-    fL = 1;
-end
-x=sen_x(2);
-y=sen_y(2);
-if x^2/ai^2+y^2/bi^2>1 && x^2/ao^2+y^2/bo^2<1
-    fR = 1;
-end
-x=sen_x(3);
-y=sen_y(3);
-if x^2/ai^2+y^2/bi^2>1 && x^2/ao^2+y^2/bo^2<1
-    fC = 1;
 end
