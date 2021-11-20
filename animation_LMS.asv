@@ -91,16 +91,15 @@ for ii = 1:N
 %     phi = xhat_last(3); 
     F_k = [1 0 -T*vee*sin(phi+T*omega/2); 0 1 T*vee*cos(phi+T*omega/2); 0 0 1];
     
-    % H jacobian
-    x = x_pos; 
-    y = y_pos; 
-    rho = sqrt(x^2+y^2); 
+    x = xhat_last(1); 
+y = xhat_last(2); 
+rho = sqrt(x^2+y^2); 
 
-    H_k = [x/rho y/rho 0; -y/rho^2 x/rho^2 0];
+H_k = [x/rho y/rho 0; -y/rho^2 x/rho^2 0];
     
     %KF:
     %[xhat_k, P_k] = KalmanFilter(y_k, xhat_last, P_last, F, Qk, H, Rk)
-    [xhat_optimal,P_optimal] = KalmanFilter(y_k, xhat_last, p_last, F_k, Q_k, H_k, R_k); %y_k, Q_k, R_k, xhat_last, p_last, vee, omega, T
+    [xhat_optimal,P_optimal] = KalmanFilter(y_k, Q_k, R_k, xhat_last, p_last, vee, omega, T);
     xhat_last = xhat_optimal; 
     p_last = P_optimal;
     
