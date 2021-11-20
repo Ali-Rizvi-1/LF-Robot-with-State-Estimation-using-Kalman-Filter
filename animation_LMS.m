@@ -64,7 +64,7 @@ for ii = 1:N
     delta_phi = T*omega;
     delta_x = 2*vee/omega*sin(delta_phi/2)*cos(phi+delta_phi/2);
     delta_y = 2*vee/omega*sin(delta_phi/2)*sin(phi+delta_phi/2);
-    
+     
     x_pos = x_pos + delta_x;
     y_pos = y_pos + delta_y;
     phi = wrapToPi(phi + delta_phi);
@@ -112,7 +112,12 @@ for ii = 1:N
 
     KF_trajectory(:, ii) = [RC_Sens_KF(1,3); RC_Sens_KF(2,3)];
     
-    
+%     hold on 
+%     plot(x_pos,y_pos); 
+%     plot(xhat_optimal(1),xhat_optimal(2));
+%     %hold off
+%     legend('Ground Truth','Estimated');
+
     clf;plot(ellipse_a*(r-s*q)*cos(theta),...
         ellipse_b*(r-s*q)*sin(theta),'k-');hold on
     plot(ellipse_a*(r+s*q)*cos(theta),...

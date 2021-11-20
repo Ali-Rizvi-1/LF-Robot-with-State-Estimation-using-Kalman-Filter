@@ -59,12 +59,12 @@ for ii = 1:N
     Q_input = diag([kR*abs(delR) kL*abs(delL)]);
     
     vee = rw*(delR+delL)/2 +randn*sqrt(Q_input(1,1)); % noise added
-    omega = rw*(delR-delL)/2/b +randn*sqrt(Q_input(1,)); % noise added
+    omega = rw*(delR-delL)/2/b +randn*sqrt(Q_input(2,2)); % noise added
     
     delta_phi = T*omega;
     delta_x = 2*vee/omega*sin(delta_phi/2)*cos(phi+delta_phi/2);
     delta_y = 2*vee/omega*sin(delta_phi/2)*sin(phi+delta_phi/2);
-    
+     
     x_pos = x_pos + delta_x;
     y_pos = y_pos + delta_y;
     phi = wrapToPi(phi + delta_phi);
@@ -112,21 +112,28 @@ for ii = 1:N
 
     KF_trajectory(:, ii) = [RC_Sens_KF(1,3); RC_Sens_KF(2,3)];
     
+    hold on 
+    plot(x_pos,y_pos); 
+    plot(xhat_optimal(1),xhat_optimal(2));
+    hold off
+    legend('Ground Truth','Estimated');
+
     
-    clf;plot(ellipse_a*(r-s*q)*cos(theta),...
-        ellipse_b*(r-s*q)*sin(theta),'k-');hold on
-    plot(ellipse_a*(r+s*q)*cos(theta),...
-        ellipse_b*(r+s*q)*sin(theta),'k-');hold on
-    
-    patch(RC_Body(1,:),RC_Body(2,:),'g'); alpha(0.2);
-    plot(RC_Sens(1,:),RC_Sens(2,:),...
-        'o','markersize',2,'markerfacecolor','k')
-    
-    patch(RC_Body_KF(1,:),RC_Body_KF(2,:),'g'); alpha(0.2);
-    plot(RC_Sens_KF(1,:),RC_Sens_KF(2,:),...
-        'o','markersize',2,'markerfacecolor','k')
-    
-    axis([-1 1 -1 1]*bb);hold on
-    plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
-    axis square; drawnow;
+%     clf;plot(ellipse_a*(r-s*q)*cos(theta),...
+%         ellipse_b*(r-s*q)*sin(theta),'k-');hold on
+%     plot(ellipse_a*(r+s*q)*cos(theta),...
+%         ellipse_b*(r+s*q)*sin(theta),'k-');hold on
+%     
+%     patch(RC_Body(1,:),RC_Body(2,:),'g'); alpha(0.2);
+%     plot(RC_Sens(1,:),RC_Sens(2,:),...
+%         'o','markersize',2,'markerfacecolor','k')
+%     
+%     patch(RC_Body_KF(1,:),RC_Body_KF(2,:),'g'); alpha(0.2);
+%     plot(RC_Sens_KF(1,:),RC_Sens_KF(2,:),...
+%         'o','markersize',2,'markerfacecolor','k')
+%     
+%     axis([-1 1 -1 1]*bb);hold on
+%     plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
+%     plot(KF_trajectory(1,1:ii),KF_trajectory(2,1:ii),'r-','linewidth',2)
+%     axis square; drawnow;
 end
