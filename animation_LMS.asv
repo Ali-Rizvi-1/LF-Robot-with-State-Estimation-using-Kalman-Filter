@@ -1,8 +1,10 @@
 function animation_LMS
 % Goal: the purpose of this program is to
-% keep the robot follow an elliptic contour.
+% keep the robot follow an elliptic contour. 
+% implementing with Extended Kalman Filter
 
 global s d b r bb q ellipse_a ellipse_b
+
 N = 1e3; % number of time steps
 d = 2; % the platform length of the robot
 b = 2; % 2b is the platform width of the robot
@@ -33,7 +35,7 @@ y_pos = rand*10;
 phi = (2*rand-1)*pi;
 
 %KF storage variables: 
-xhat_last = [x_pos; y_pos; phi];
+xhat_last = [x_pos; y_pos; phi; 0; 0];
 
 %stochastic setup:
 kR = 1e-2; kL = 1e-2;
@@ -50,11 +52,21 @@ RC_Sens = [cos(phi) -sin(phi); ...
 %stochastic setup for observation: 
 R_k = diag([1e-3 1e-3]);
 
+aaa=figure('name', 'Odin')
+hAx1 = axes;
+%plot(hAx1, 1, 1, '*r')
+hold on
+
+bbb=figure('name', 'Thor')
+hAx2 = axes;
+%plot(hAx2, 2, 1, '*r')
+hold on
+
 for ii = 1:N
     [fL,fR,fC]=check_sensors2(RC_Sens(1,:),RC_Sens(2,:));
     
     [delR,delL] = controller(fL,fR,fC);
-    
+    xhat_last = [x_pos; y_pos; phi; 0; delL];
     %calculate input's Covariance matrix: 
     Q_input = diag([kR*abs(delR) kL*abs(delL)]);
     
@@ -73,26 +85,34 @@ for ii = 1:N
     sigma_ = diag([kR*delR kL*delL]);
     B = [(1/2)*cos(phi+T*omega/2)-(T*vee/(2*b))*sin(phi+T*omega/2), (1/2)*cos(phi+T*omega/2)+(T*vee/(2*b)*sin(phi+T*omega/2));
         (1/2)*sin(phi+T*omega/2)+(T*vee/(2*b))*cos(phi+T*omega/2), (1/2)*sin(phi+T*omega/2)-(T*vee/(2*b))*cos(phi+T*omega/2);
-        1/b, -1/b];
+        1/b, -1/b;
+        1,0;
+        0,1];
     Q_k = B*sigma_*B';
     
     %observation: Assume radar observation 
-    y_k = [sqrt(x_pos^2+y_pos^2); atan(y_pos/x_pos)] + sqrt(R_k)*randn(2, 1);
     
-    %compute jacobian of system: 
-%     phi = xhat_last(3); 
-    F_k = [1 0 -T*vee*sin(phi+T*omega/2); 0 1 T*vee*cos(phi+T*omega/2); 0 0 1];
+    y_k = [delR 0;0 delL] + sqrt(R_k)*randn(2, 1); 
     
-    % H jacobian
-    x = x_pos; 
-    y = y_pos; 
-    rho = sqrt(x^2+y^2); 
+    %y_k = [sqrt(x_pos^2+y_pos^2); atan(y_pos/x_pos)] + sqrt(R_k)*randn(2, 1);
+    
+    %compute the jacobian of f at x(k-1 given k-1)
+    F_k = [1 0 -T*vee*sin(phi+(T*omega)/2); 0 1 T*vee*cos(phi+(T*omega)/2); 0 0 1]
+    
+    F_k = [F_k [0;0;0] [0;0;0]; 0 0 0 0 0; 0 0 0 0 0]
+    
+    % H jacobian 
+    %rho = sqrt(x_pos^2+y_pos^2); 
 
-    H_k = [x/rho y/rho 0; -y/rho^2 x/rho^2 0];
+    %H_k = [x_pos/rho y_pos/rho 0; -y_pos/rho^2 x_pos/rho^2 0];
+    
+    H_k = [0 0 0 1 0;
+        0 0 0 0 1];
     
     %KF:
     %[xhat_k, P_k] = KalmanFilter(y_k, xhat_last, P_last, F, Qk, H, Rk)
-    [xhat_optimal,P_optimal] = KalmanFilter(y_k, xhat_last, p_last, F_k, Q_k, H_k, R_k); %y_k, Q_k, R_k, xhat_last, p_last, vee, omega, T
+    [xhat_optimal,P_optimal] = KalmanFilter(y_k, xhat_last, p_last, F_k, Q_k, H_k, R_k);
+    
     xhat_last = xhat_optimal; 
     p_last = P_optimal;
     
@@ -112,28 +132,34 @@ for ii = 1:N
 
     KF_trajectory(:, ii) = [RC_Sens_KF(1,3); RC_Sens_KF(2,3)];
     
-    hold on 
-    plot(x_pos,y_pos); 
-    plot(xhat_optimal(1),xhat_optimal(2));
-    hold off
-    legend('Ground Truth','Estimated');
+%     hold on 
+%     plot(x_pos,y_pos); 
+%     plot(xhat_optimal(1),xhat_optimal(2));
+%     hold off
+%     legend('Ground Truth','Estimated');
 
+    plot(hAx1,x_pos,...
+        y_pos,'k*'); hold on
+    plot(hAx1,xhat_optimal(1),...
+        xhat_optimal(2),'ro','markersize',5);
     
-%     clf;plot(ellipse_a*(r-s*q)*cos(theta),...
-%         ellipse_b*(r-s*q)*sin(theta),'k-');hold on
-%     plot(ellipse_a*(r+s*q)*cos(theta),...
-%         ellipse_b*(r+s*q)*sin(theta),'k-');hold on
-%     
-%     patch(RC_Body(1,:),RC_Body(2,:),'g'); alpha(0.2);
-%     plot(RC_Sens(1,:),RC_Sens(2,:),...
-%         'o','markersize',2,'markerfacecolor','k')
-%     
-%     patch(RC_Body_KF(1,:),RC_Body_KF(2,:),'g'); alpha(0.2);
-%     plot(RC_Sens_KF(1,:),RC_Sens_KF(2,:),...
-%         'o','markersize',2,'markerfacecolor','k')
-%     
-%     axis([-1 1 -1 1]*bb);hold on
-%     plot(trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
-%     plot(KF_trajectory(1,1:ii),KF_trajectory(2,1:ii),'r-','linewidth',2)
-%     axis square; drawnow;
+    %clf(bbb);
+    plot(hAx2,ellipse_a*(r-s*q)*cos(theta),...
+        ellipse_b*(r-s*q)*sin(theta),'k-');hold on
+    plot(hAx2,ellipse_a*(r+s*q)*cos(theta),...
+        ellipse_b*(r+s*q)*sin(theta),'k-');hold on
+    
+    patch(hAx2, RC_Body(1,:),RC_Body(2,:),'g'); alpha(0.2);
+    plot(hAx2,RC_Sens(1,:),RC_Sens(2,:),...
+        'o','markersize',2,'markerfacecolor','k')
+    
+    patch(hAx2,RC_Body_KF(1,:),RC_Body_KF(2,:),'g'); alpha(0.2);
+    plot(hAx2,RC_Sens_KF(1,:),RC_Sens_KF(2,:),...
+        'o','markersize',2,'markerfacecolor','k')
+    
+    axis([-1 1 -1 1]*bb);hold on
+    plot(hAx2,trajectory(1,1:ii),trajectory(2,1:ii),'b-','linewidth',2)
+    plot(hAx2,KF_trajectory(1,1:ii),KF_trajectory(2,1:ii),'r-','linewidth',2)
+    axis square; drawnow;
+    
 end
