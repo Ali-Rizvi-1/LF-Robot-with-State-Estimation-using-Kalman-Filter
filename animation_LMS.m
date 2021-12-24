@@ -2,6 +2,7 @@ function animation_LMS
 % Goal: the purpose of this program is to
 % keep the robot follow an elliptic contour. 
 % implementing with Extended Kalman Filter
+close all; clear; clc;
 
 global s d b r bb q ellipse_a ellipse_b
 
@@ -100,9 +101,9 @@ for ii = 1:N
     %y_k = [sqrt(x_pos^2+y_pos^2); atan(y_pos/x_pos)] + sqrt(R_k)*randn(2, 1);
     
     %compute the jacobian of f at x(k-1 given k-1)
-    F_k = [1 0 -T*vee*sin(phi+(T*omega)/2); 0 1 T*vee*cos(phi+(T*omega)/2); 0 0 1]
+    F_k = [1 0 -T*vee*sin(phi+(T*omega)/2); 0 1 T*vee*cos(phi+(T*omega)/2); 0 0 1];
     
-    F_k = [F_k [0;0;0] [0;0;0]; 0 0 0 0 0; 0 0 0 0 0]
+    F_k = [F_k [0;0;0] [0;0;0]; 0 0 0 0 0; 0 0 0 0 0];
     
     % H jacobian 
     %rho = sqrt(x_pos^2+y_pos^2); 
